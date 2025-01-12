@@ -14,4 +14,16 @@ contract Donation {
         address owner;
         bool isCompleted;
     }
+
+    struct Donor {
+        address donor;
+        uint amount;
+    }
+
+    struct Donations {
+        uint campaignId;
+        uint amount;
+        address donor;
+    }
+
 }
