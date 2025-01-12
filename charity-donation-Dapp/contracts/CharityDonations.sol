@@ -264,18 +264,5 @@ contract Donation {
 
     // this allows Withdrawal of funds  with multisignature approval from the signers
 
-    function withdrawFunds(uint _campaignId, uint _amount, address payable _recipient) external onlySigner validCampaign(_campaignId) {
-        Campaign storage campaign = campaigns[_campaignId];
-        require(campaign.totalDonated >= _amount, "Insufficient funds");
-
-        transactionCount++;
-        transactions[transactionCount] = Transaction({
-            amount: _amount,
-            recipient: _recipient,
-            executed: false,
-            approvals: 0
-        });
-
-        emit TransactionCreated(transactionCount, _recipient, _amount);
-    }
+    
 }
