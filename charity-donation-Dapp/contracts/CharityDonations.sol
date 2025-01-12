@@ -65,12 +65,32 @@ contract Donation {
         uint totalAmountRaised,
         uint numberOfDonors
     );
+    event TransactionCreated(
+        uint txId, 
+        address recipient, 
+        uint amount
+    );
+    event TransactionApproved(
+        uint txId, 
+        address signer
+    );
+    event TransactionExecuted(
+        uint txId, 
+        address recipient, 
+        uint amount
+    );
+    event TopContributorsRewarded(
+        uint campaignId, 
+        address[] topContributors
+    );
+
 
     //modifiers, they are special functions that can modify the behavior of other functions, we have inbuit and custom
     modifier onlyCreator(uint _campaignId) {
         require (msg.sender == campaigns[_campaignId].owner, "Not the campaign creator");
             _;
     }
+    
 
     modifier onlyAdmin() {
         require(msg.sender == admins, "Not the admin");
@@ -81,6 +101,11 @@ contract Donation {
         require(msg.sender == signers, "Not the signer");
         _;
     }
+    modifier validCampaign(uint _id) {
+        require(_id < campaigns.length, "Campaign does not exist");
+        _;
+    }
+
 
     //set a constructor thar runs when the contract is deployed
     constructor(address[] memory _admin, address[] memory _signer, uint _requiredSignatures, address _ContributorNFTAddress){
@@ -219,5 +244,38 @@ contract Donation {
         }
 
         return topContributorsList;
+    }
+
+
+    // Reward the top 3 contributors with NFTs
+    //function rewardTopContributors(uint _campaignId) external onlyAdmin validCampaign(_campaignId) {
+       // address[] memory topContributors = getTopContributors(_campaignId);
+
+        //for (uint i = 0; i < topContributors.length; i++) {
+          //  if (topContributors[i] != address(0)) {
+             //   string memory tokenURI = string(abi.encodePacked("https://example.com/metadata/", uint2str(i + 1)));
+
+             //   contributorNFT.mintNFT(topContributors[i], tokenURI);
+          //  }
+       // }
+
+     //   emit TopContributorsRewarded(_campaignId, topContributors);
+    //}
+
+    // this allows Withdrawal of funds  with multisignature approval from the signers
+
+    function withdrawFunds(uint _campaignId, uint _amount, address payable _recipient) external onlySigner validCampaign(_campaignId) {
+        Campaign storage campaign = campaigns[_campaignId];
+        require(campaign.totalDonated >= _amount, "Insufficient funds");
+
+        transactionCount++;
+        transactions[transactionCount] = Transaction({
+            amount: _amount,
+            recipient: _recipient,
+            executed: false,
+            approvals: 0
+        });
+
+        emit TransactionCreated(transactionCount, _recipient, _amount);
     }
 }
