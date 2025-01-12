@@ -3,6 +3,8 @@
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import "./contributorNFT.sol";
+
 contract Donation {
     struct Campaign {
         string title;
@@ -35,6 +37,9 @@ contract Donation {
     mapping(address => Donations[]) public donations;
     mapping(uint => address[]) public topContributors;
     mapping(uint256 => mapping(address => bool)) public hasDonated;
+    mapping(address => bool) public admins;
+    mapping(address => bool) public signers;
+    mapping(uint => mapping(address => bool)) approvedSignatures;
 
 // setting a minimum donation amount
     uint public constant MIN_DONATION = 0.01 ether;
@@ -58,30 +63,29 @@ contract Donation {
     event CampaignCompleted(
         uint campaignId,
         uint totalAmountRaised,
-        uint numberOfDonors,
-    )
+        uint numberOfDonors
+    );
 
     //modifiers, they are special functions that can modify the behavior of other functions, we have inbuit and custom
     modifier onlyCreator(uint _campaignId) {
-        require(
-            msg.sender == campaigns[_campaignId].owner, "Not the campaign creator"
+        require (msg.sender == campaigns[_campaignId].owner, "Not the campaign creator");
             _;
     }
 
     modifier onlyAdmin() {
-        require(msg.sender == admin, "Not the admin");
+        require(msg.sender == admins, "Not the admin");
         _;
     }
 
     modifier onlySigner() {
-        require(msg.sender == signer, "Not the signer");
+        require(msg.sender == signers, "Not the signer");
         _;
     }
 
     //set a constructor thar runs when the contract is deployed
     constructor(address[] memory _admin, address[] memory _signer, uint _requiredSignatures, address _ContributorNFTAddress){
         require(_requiredSignatures > 0, "Required signatures should be greater than 0");
-        require (signers.length == requiredSignatures, "Number of signers should be equal to required signatures");
+        require (signers.length == _requiredSignatures, "Number of signers should be equal to required signatures");
 
         for(uint i = 0; i < _admin.length; i++){
             admins[_admin[i]] = true;
@@ -112,7 +116,7 @@ contract Donation {
             title: _title,
             description: _description,
             deadline: _deadline,
-            goal: 0;
+            goal: 0,
             creator: msg.sender,
             isCompleted: false 
         });
@@ -151,7 +155,7 @@ contract Donation {
        require(
         block.timestamp < campaigns[_campaignId].deadline, "Campaign has already ended"
 
-       ),
+       );
        require(!campaign.isCompleted, "Campaign is already completed");
 
        //check to make sure the amount is not exceeding the goal
@@ -170,7 +174,7 @@ contract Donation {
         Donor({
             donorAddress: msg.sender, amount: msg.value
         })
-       )
+       );
 
         //updater the total amount raised for the campaign
        campaigns[_campaignId].amountRaised += msg.value;
@@ -186,11 +190,34 @@ contract Donation {
 
        // NOW WE EMIT THE DONATION EVENT
        emit DonationReceived(_campaignId, msg.value, msg.sender, campaigns[_campaignId].amountRaised);
+    }
+    function getTopContributors(uint _campaignId) public view returns (address[] memory) {
+        Donation[] memory campaignDonations = donations[_campaignId];
+        address[] memory topContributorsList = new address[](3);
+        uint[] memory topAmounts = new uint[](3);
 
-        
+        for (uint i = 0; i < campaignDonations.length; i++) {
+            address donor = campaignDonations[i].donor;
+            uint amount = campaignDonations[i].amount;
 
-        
+            if (amount > topAmounts[0]) {
+                topAmounts[2] = topAmounts[1];
+                topContributorsList[2] = topContributorsList[1];
+                topAmounts[1] = topAmounts[0];
+                topContributorsList[1] = topContributorsList[0];
+                topAmounts[0] = amount;
+                topContributorsList[0] = donor;
+            } else if (amount > topAmounts[1]) {
+                topAmounts[2] = topAmounts[1];
+                topContributorsList[2] = topContributorsList[1];
+                topAmounts[1] = amount;
+                topContributorsList[1] = donor;
+            } else if (amount > topAmounts[2]) {
+                topAmounts[2] = amount;
+                topContributorsList[2] = donor;
+            }
+        }
 
-
-
+        return topContributorsList;
+    }
 }
