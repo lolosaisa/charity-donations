@@ -1,0 +1,1 @@
+//General donations smart contract
