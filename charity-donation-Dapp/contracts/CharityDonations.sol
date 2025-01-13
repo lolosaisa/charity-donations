@@ -41,6 +41,12 @@ contract Donation {
     mapping(address => bool) public signers;
     mapping(uint => mapping(address => bool)) approvedSignatures;
 
+
+//undeclared identifiers...tryint to solve error in line 204
+    uint public requiredSignatures;
+    uint public contractOwner;
+    ContributorNFT public contributorNFT;
+
 // setting a minimum donation amount
     uint public constant MIN_DONATION = 0.01 ether;
 
@@ -101,10 +107,10 @@ contract Donation {
         require(msg.sender == signers, "Not the signer");
         _;
     }
-    modifier validCampaign(uint _id) {
-        require(_id < campaigns.length, "Campaign does not exist");
-        _;
-    }
+    //modifier validCampaign(uint _id) {
+      //  require(_id < campaigns.length, "Campaign does not exist");
+      //  _;
+    // }
 
 
     //set a constructor thar runs when the contract is deployed
@@ -122,7 +128,7 @@ contract Donation {
 
         contractOwner = msg.sender;
         requiredSignatures = _requiredSignatures;
-        contributorNFT = contributorNFT(_ContributorNFTAddress);
+        contributorNFT = ContributorNFT(_ContributorNFTAddress);
 
             
     }
